@@ -42,8 +42,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	long x = 22;
 	std::cout << "Sending " << x << std::endl;
 	send(sid, (char *)&x, sizeof x, 0);
-	char buf[BUF_SIZE] = { 0 };
-	int n = recv(sid, buf, sizeof buf, 0);
+	TCHAR buf[BUF_SIZE] = { 0 };
+	int n = recv(sid, (char *)buf, sizeof(buf), 0);
 	std::cout << "Recieved " << buf << std::endl;
 	shutdown(sid, 2);
 	closesocket(sid);
