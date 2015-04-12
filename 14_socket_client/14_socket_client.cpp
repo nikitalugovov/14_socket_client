@@ -17,12 +17,13 @@ BOOL PrintFormat(HANDLE hOut, LPCTSTR pFormat, ...);
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	setlocale(LC_ALL, "ru_RU");
 	WSADATA wsad;
 	int err;
 	err = WSAStartup(MAKEWORD(2, 1), &wsad);
 	if (err) {
-		std::cout << "Couldn't initialize sockets or something" << std::endl;
+		PrintFormat(hOut, _T("Couldn't initialize sockets or something\n"));
 		return 1;
 	}
 
@@ -33,21 +34,21 @@ int _tmain(int argc, _TCHAR* argv[])
 	addr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
 	SOCKET sid = socket(PF_INET, SOCK_STREAM, 0);
 	if (sid == INVALID_SOCKET) {
-		std::cout << "Invalid socket" << std::endl;
+		PrintFormat(hOut, _T("Invalid socket\n"));
 		return 1;
 	}
 
 	err = connect(sid, (sockaddr *)&addr, sizeof addr);
 	if (err == SOCKET_ERROR) {
-		std::cout << "Could not connect" << std::endl;
+		PrintFormat(hOut, _T("Could not connect\n"));
 		return 2;
 	}
 	long x = 22;
-	std::cout << "Sending " << x << std::endl;
+	PrintFormat(hOut, _T("Отправляю %1!d!\n"), x);
 	send(sid, (char *)&x, sizeof x, 0);
 	char buf[BUF_SIZE] = { 0 };
 	int n = recv(sid, buf, sizeof buf, 0);
-	std::cout << "Recieved " << buf << std::endl;
+	PrintFormat(hOut, _T("Принял в ответ %1!s!\n"), buf);
 	shutdown(sid, 2);
 	closesocket(sid);
 
