@@ -46,8 +46,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	long x = 22;
 	PrintFormat(hOut, _T("Отправляю %1!d!\n"), x);
 	send(sid, (char *)&x, sizeof x, 0);
-	char buf[BUF_SIZE] = { 0 };
-	int n = recv(sid, buf, sizeof buf, 0);
+	TCHAR buf[BUF_SIZE] = { 0 };
+	int n = recv(sid, (char*)buf, sizeof buf, 0);
 	PrintFormat(hOut, _T("Принял в ответ %1!s!\n"), buf);
 	shutdown(sid, 2);
 	closesocket(sid);
