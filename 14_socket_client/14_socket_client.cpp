@@ -23,8 +23,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int err;
 	err = WSAStartup(MAKEWORD(2, 1), &wsad);
 	if (err) {
-		PrintFormat(hOut, _T("Couldn't initialize sockets or something\n"));
-		return 1;
+		ReportError(_T("Не удалось инициализировать сокеты\n"), err, FALSE);
 	}
 
 	sockaddr_in addr;
@@ -34,25 +33,37 @@ int _tmain(int argc, _TCHAR* argv[])
 	addr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
 	SOCKET sid = socket(PF_INET, SOCK_STREAM, 0);
 	if (sid == INVALID_SOCKET) {
-		PrintFormat(hOut, _T("Invalid socket\n"));
-		return 1;
+		ReportError(NULL, WSAGetLastError(), TRUE);
 	}
 
 	err = connect(sid, (sockaddr *)&addr, sizeof addr);
 	if (err == SOCKET_ERROR) {
-		PrintFormat(hOut, _T("Could not connect\n"));
-		return 2;
+		ReportError(NULL, WSAGetLastError(), TRUE);
 	}
 	long x = 22;
 	PrintFormat(hOut, _T("Отправляю %1!d!\n"), x);
-	send(sid, (char *)&x, sizeof x, 0);
+	int n = send(sid, (char *)&x, sizeof x, 0);
+	if (n == SOCKET_ERROR) {
+		ReportError(NULL, WSAGetLastError(), TRUE);
+	}
 	TCHAR buf[BUF_SIZE] = { 0 };
-	int n = recv(sid, (char*)buf, sizeof buf, 0);
+	n = recv(sid, (char*)buf, sizeof buf, 0);
+	if (n == SOCKET_ERROR) {
+		ReportError(NULL, WSAGetLastError(), TRUE);
+	}
 	PrintFormat(hOut, _T("Принял в ответ %1!s!\n"), buf);
-	shutdown(sid, 2);
-	closesocket(sid);
-
-	WSACleanup();
+	err = shutdown(sid, SD_BOTH);
+	if (err == SOCKET_ERROR) {
+		ReportError(NULL, WSAGetLastError(), TRUE);
+	}
+	err = closesocket(sid);
+	if (err == SOCKET_ERROR) {
+		ReportError(NULL, WSAGetLastError(), TRUE);
+	}
+	err = WSACleanup();
+	if (err == SOCKET_ERROR) {
+		ReportError(NULL, WSAGetLastError(), TRUE);
+	}
 	return 0;
 }
 
@@ -61,20 +72,21 @@ VOID ReportError(LPCTSTR UserMessage, DWORD ExitCode, BOOL PrintErrorMsg)
 	DWORD eMsgLen, LastErr = GetLastError();
 	LPTSTR lpvSysMsg;
 	HANDLE hStdErr = GetStdHandle(STD_ERROR_HANDLE);
-	PrintMsg(hStdErr, UserMessage);
+	if (UserMessage) {
+		PrintMsg(hStdErr, UserMessage);
+	}
 	if (PrintErrorMsg)
 	{
 		eMsgLen = FormatMessage(
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
 			NULL, LastErr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 			(LPTSTR)&lpvSysMsg, 0, NULL);
-		MessageBox(NULL, lpvSysMsg, _T("Ошибка"), MB_OK);
-		//PrintStrings(hStdErr, _T("\n"), lpvSysMsg, _T("\n"), NULL);
+		//MessageBox(NULL, lpvSysMsg, _T("Ошибка"), MB_OK);
+		PrintStrings(hStdErr, lpvSysMsg, NULL);
 		LocalFree(lpvSysMsg);
 	}
 	if (ExitCode > 0)
 	{
-		getchar();
 		ExitProcess(ExitCode);
 	}
 	else
